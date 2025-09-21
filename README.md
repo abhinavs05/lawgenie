@@ -3,6 +3,7 @@
 LawGenie frontend provides a user interface to upload, analyze, and translate legal documents. It is built using **React.js**, and communicates with the backend via **Ngrok** or a deployed API.
 
 ---
+Deployment link :- https://lawgenie-frontend.web.app/
 
 ## 🚀 Features
 
@@ -101,6 +102,50 @@ http://localhost:3000
 
 ---
 
+## 🌍 Deployment via Firebase Hosting
+
+1. Install Firebase CLI:
+
+   ```bash
+   npm install -g firebase-tools
+   ```
+
+2. Login to Firebase:
+
+   ```bash
+   firebase login
+   ```
+
+3. Initialize Firebase Hosting inside the project:
+
+   ```bash
+   firebase init hosting
+   ```
+
+   * Choose your Firebase project.
+   * Set `build` (or `dist`) as the public directory (depending on your build setup).
+   * Configure as a single-page app: **Yes**.
+
+4. Build the React app:
+
+   ```bash
+   npm run build
+   ```
+
+5. Deploy to Firebase:
+
+   ```bash
+   firebase deploy
+   ```
+
+Your frontend will now be available at:
+
+```
+https://your-project-id.web.app
+```
+
+---
+
 ## 📁 Project Structure
 
 ```
@@ -119,7 +164,17 @@ public/                # Static assets
 
 * If ngrok URL changes, update `config.js` each time (unless you use a reserved domain).
 * Ensure backend is running before frontend API calls.
-* You can deploy this frontend to **Firebase Hosting, Netlify, or Vercel**.
+* You can deploy this frontend to **Firebase Hosting.
+
+---
+
+## 🔮 Future Enhancements
+
+* Voice-controlled commands for document interactions.
+* Real-time translation with speech-to-text integration.
+* AI-powered contract drafting assistance.
+* Multi-user collaboration and annotation.
+* Enhanced dashboard for document management.
 
 ---
 
