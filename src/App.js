@@ -114,9 +114,14 @@ function App() {
 const handleSummarize = async () => {
   const data = await callApi("summarize", ENDPOINTS.summarize, {  
     file_id: fileInfo.file_id,
-    mimetype: fileInfo.type,   // ✅ added
+    mimetype: fileInfo.type,
   });
-  if (data?.data) setResults((prev) => ({ ...prev, summary: data.data.summary || "" }));
+  // Support both data.data.summary and data.summary
+  const summary =
+    data?.data?.summary ??
+    data?.summary ??
+    "";
+  setResults((prev) => ({ ...prev, summary }));
 };
 
 const handleAsk = async () => {
@@ -176,17 +181,18 @@ const handleTranslate = async () => {
     targetLanguage: lang,
   });
 
-  // ✅ FIX: Safely check for data.data and update the state correctly
-  if (data?.data) { // Use optional chaining to prevent crashes
-    setResults((prev) => ({
-      ...prev,
-      // Keep `translation` as an object and only update its property
-      translation: {
-        ...prev.translation,
-        translatedText: data.data.translatedText || "",
-      },
-    }));
-  }
+  // Support both data.data.translatedText and data.translatedText
+  const translatedText =
+    data?.data?.translatedText ??
+    data?.translatedText ??
+    "";
+  setResults((prev) => ({
+    ...prev,
+    translation: {
+      ...prev.translation,
+      translatedText,
+    },
+  }));
 };
 
 
