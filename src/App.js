@@ -121,9 +121,12 @@ const handleUpload = async (e) => {
 const handleSummarize = async () => {
   const data = await callApi("summarize", ENDPOINTS.summarize, {  
     file_id: fileInfo.file_id,
-    mimetype: fileInfo.type,   // ✅ added
+    mimetype: fileInfo.type,
   });
-  if (data?.data) setResults((prev) => ({ ...prev, summary: data.data.summary || "" }));
+  // Support both data.data.summary and data.summary for flexibility
+  const summary =
+    (data?.data?.summary ?? data?.summary ?? data?.data) || "";
+  setResults((prev) => ({ ...prev, summary }));
 };
 
 const handleAsk = async () => {
@@ -131,18 +134,28 @@ const handleAsk = async () => {
   if (!question) return;
   const data = await callApi("ask", ENDPOINTS.ask, { 
     file_id: fileInfo.file_id,
-    mimetype: fileInfo.type,   // ✅ added
-    question,                  // send the actual question too
+    mimetype: fileInfo.type,
+    question,
   });
-  if (data?.data) setResults((prev) => ({ ...prev, answer: data.data.answer || "" }));
+  // Support both data.data.answer and data.answer
+  const answer =
+    data?.data?.answer ??
+    data?.answer ??
+    "";
+  setResults((prev) => ({ ...prev, answer }));
 };
 
 const handleKeyterms = async () => {
   const data = await callApi("keyterms", ENDPOINTS.keyterms, { 
     file_id: fileInfo.file_id,
-    mimetype: fileInfo.type,   // ✅ added
+    mimetype: fileInfo.type,
   });
-  if (data?.data) setResults((prev) => ({ ...prev, keyterms: data.data.keyterms || [] }));
+  // Support both data.data.keyterms, data.keyterms, or data.data (if array)
+  const keyterms =
+    data?.data?.keyterms ??
+    data?.keyterms ??
+    (Array.isArray(data?.data) ? data.data : []);
+  setResults((prev) => ({ ...prev, keyterms }));
 };
 
 const handleIssues = async () => {
@@ -183,17 +196,18 @@ const handleTranslate = async () => {
     targetLanguage: lang,
   });
 
-  // ✅ FIX: Safely check for data.data and update the state correctly
-  if (data?.data) { // Use optional chaining to prevent crashes
-    setResults((prev) => ({
-      ...prev,
-      // Keep `translation` as an object and only update its property
-      translation: {
-        ...prev.translation,
-        translatedText: data.data.translatedText || "",
-      },
-    }));
-  }
+  // Support both data.data.translatedText and data.translatedText
+  const translatedText =
+    data?.data?.translatedText ??
+    data?.translatedText ??
+    "";
+  setResults((prev) => ({
+    ...prev,
+    translation: {
+      ...prev.translation,
+      translatedText,
+    },
+  }));
 };
 
 
@@ -270,14 +284,19 @@ const handleTranslate = async () => {
 
       {/* Results */}
       <section className="px-6 md:px-20 py-10 space-y-6">
-        {results.summary && <div><h4 className="font-bold">Summary</h4><p>{results.summary}</p></div>}
-        {results.answer && <div><h4 className="font-bold">Answer</h4><p>{results.answer}</p></div>}
+        {results.summary && (
+          <div>
+            <h4 className="font-bold">Summary</h4>
+            <p>{results.summary}</p>
+          </div>
+        )}
         {results.keyterms.length > 0 && (
           <div>
             <h4 className="font-bold">Key Terms</h4>
             <ul className="list-disc pl-6">{results.keyterms.map((k, i) => <li key={i}>{k}</li>)}</ul>
           </div>
         )}
+        {results.answer && <div><h4 className="font-bold">Answer</h4><p>{results.answer}</p></div>}
         {results.issues.length > 0 && (
           <div>
             <h4 className="font-bold">Issues</h4>
