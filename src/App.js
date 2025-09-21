@@ -1,14 +1,26 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { ENDPOINTS } from './config'; // Correct for a named export
 
-// Replace this with your Google OAuth client ID
+
 const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
-// Replace this with your backend endpoint for uploads
-const UPLOAD_ENDPOINT = "/api/upload";
 
 function App() {
+  const [fileInfo, setFileInfo] = useState(null); // stores uploaded file metadata
+  const [loading, setLoading] = useState(null);
+  const [error, setError] = useState("");
+  const [results, setResults] = useState({
+    summary: "",
+    clauses: "",
+    answer: "",
+    keyterms: [],
+    issues: [],
+    compare: "",
+    comprehensive: "",
+    translation: { translatedText: "" }, 
+  });
+
   useEffect(() => {
-    // Load Google Identity script dynamically
     const script = document.createElement("script");
     script.src = "https://accounts.google.com/gsi/client";
     script.async = true;
@@ -32,25 +44,158 @@ function App() {
     };
   }, []);
 
-  const handleUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append("document", file);
-
+  // helper wrapper for API calls
+  const callApi = async (name, endpoint, payload) => {
+    setLoading(name);
+    setError("");
     try {
-      const res = await fetch(UPLOAD_ENDPOINT, {
+      console.log(`🚀 Calling ${endpoint} with payload:`, payload);
+      const res = await fetch(endpoint, {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
+      // ✅ FIXED: Added backticks for template literal
+      if (!res.ok) throw new Error(`API error: ${res.status}`);
       const data = await res.json();
-      alert("File uploaded successfully: " + JSON.stringify(data));
+      console.log(`✅ ${name} response:`, data);
+      return data;
     } catch (err) {
-      console.error("Upload error:", err);
-      alert("Upload failed. Check console for details.");
+      console.error(`❌ ${name} error:`, err);
+      // ✅ FIXED: Added backticks for template literal
+      setError(`Failed to ${name}. Please try again.`);
+      return null;
+    } finally {
+      setLoading(null);
     }
   };
+
+  // Upload handler
+const handleUpload = async (e) => {
+  console.log("📂 handleUpload triggered");
+  const file = e.target.files[0];
+  console.log("📂 Selected file:", file);
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  setLoading("upload");
+  setError("");
+  try {
+    console.log("🚀 Sending upload request to:", ENDPOINTS.upload);
+    const res = await fetch(ENDPOINTS.upload, { method: "POST", body: formData });
+    
+
+    if (!res.ok) throw new Error(`Upload failed with status ${res.status}`);
+    const data = await res.json();
+
+    console.log("✅ Upload response JSON:", data);
+
+    // ✅ Only keep necessary file info
+    const fileMeta = {
+      file_id: data.file_id,
+      name: data.originalname,
+      size: data.size,
+      type: data.mimetype,
+    };
+
+    setFileInfo(fileMeta);
+    console.log("📂 fileInfo set as:", fileMeta);
+
+    alert("File uploaded successfully ✅");
+  } catch (err) {
+    console.error("❌ Upload error:", err);
+    setError("Upload failed. Please try again.");
+  } finally {
+    setLoading(null);
+  }
+};
+
+
+
+
+
+  // Action handlers
+ // Action handlers
+const handleSummarize = async () => {
+  const data = await callApi("summarize", ENDPOINTS.summarize, {  
+    file_id: fileInfo.file_id,
+    mimetype: fileInfo.type,   // ✅ added
+  });
+  if (data?.data) setResults((prev) => ({ ...prev, summary: data.data.summary || "" }));
+};
+
+const handleAsk = async () => {
+  const question = prompt("Enter your question:");
+  if (!question) return;
+  const data = await callApi("ask", ENDPOINTS.ask, { 
+    file_id: fileInfo.file_id,
+    mimetype: fileInfo.type,   // ✅ added
+    question,                  // send the actual question too
+  });
+  if (data?.data) setResults((prev) => ({ ...prev, answer: data.data.answer || "" }));
+};
+
+const handleKeyterms = async () => {
+  const data = await callApi("keyterms", ENDPOINTS.keyterms, { 
+    file_id: fileInfo.file_id,
+    mimetype: fileInfo.type,   // ✅ added
+  });
+  if (data?.data) setResults((prev) => ({ ...prev, keyterms: data.data.keyterms || [] }));
+};
+
+const handleIssues = async () => {
+  const data = await callApi("issues", ENDPOINTS.issues, { 
+    file_id: fileInfo.file_id,
+    mimetype: fileInfo.type,   // ✅ added
+  });
+  if (data?.data) setResults((prev) => ({ ...prev, issues: data.data.issues || [] }));
+};
+
+const handleCompare = async () => {
+  alert("Compare requires two uploaded documents. Please upload a second file and pass both file IDs to the backend.");
+};
+
+const handleClauses = async () => {
+  const data = await callApi("clauses", ENDPOINTS.clauses, { 
+    file_id: fileInfo.file_id,
+    mimetype: fileInfo.type,   // ✅ added
+  });
+  if (data?.data) setResults((prev) => ({ ...prev, clauses: data.data.analysis || "" }));
+};
+
+const handleComprehensive = async () => {
+  const data = await callApi("comprehensive", ENDPOINTS.comprehensive, { 
+    file_id: fileInfo.file_id,
+    mimetype: fileInfo.type,   // ✅ added
+  });
+  if (data?.data) setResults((prev) => ({ ...prev, comprehensive: data.data.analysis || "" }));
+};
+
+const handleTranslate = async () => {
+  const lang = prompt("Enter language code (e.g., 'es' for Spanish):");
+  if (!lang) return;
+
+  const data = await callApi("translate", ENDPOINTS.translate, {
+    file_id: fileInfo.file_id,
+    mimetype: fileInfo.type,
+    targetLanguage: lang,
+  });
+
+  // ✅ FIX: Safely check for data.data and update the state correctly
+  if (data?.data) { // Use optional chaining to prevent crashes
+    setResults((prev) => ({
+      ...prev,
+      // Keep `translation` as an object and only update its property
+      translation: {
+        ...prev.translation,
+        translatedText: data.data.translatedText || "",
+      },
+    }));
+  }
+};
+
 
   return (
     <div className="min-h-screen w-full bg-gray-50 text-gray-900">
@@ -82,71 +227,67 @@ function App() {
           transition={{ delay: 0.6 }}
           className="mt-6 max-w-xl text-lg opacity-90"
         >
-          Simplify complex contracts and agreements into clear, accessible
-          guidance — empowering you to make informed decisions.
+          Simplify complex contracts and agreements into clear, accessible guidance — empowering you to make informed decisions.
         </motion.p>
-        <div className="mt-8 flex gap-4">
-          <button className="bg-white text-blue-900 font-semibold hover:bg-gray-200 rounded-xl px-6 py-3">
-            Get Started
-          </button>
-          <button className="border border-white text-white hover:bg-white hover:text-blue-900 rounded-xl px-6 py-3">
-            Learn More
-          </button>
-        </div>
       </section>
 
-      {/* Services */}
-      <section id="services" className="px-6 md:px-20 py-20 bg-gray-50">
-        <h3 className="text-3xl font-bold text-center text-blue-900 mb-12">Our Services</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="rounded-2xl shadow-md p-6 text-center bg-white">
-            <h4 className="text-xl font-semibold mb-2">Summarization</h4>
-            <p className="text-gray-600">Get clear, concise summaries of complex contracts.</p>
-          </div>
-          <div className="rounded-2xl shadow-md p-6 text-center bg-white">
-            <h4 className="text-xl font-semibold mb-2">Clause Explanation</h4>
-            <p className="text-gray-600">Understand key terms and obligations in plain language.</p>
-          </div>
-          <div className="rounded-2xl shadow-md p-6 text-center bg-white">
-            <h4 className="text-xl font-semibold mb-2">Interactive Q&A</h4>
-            <p className="text-gray-600">Ask questions about your document and get instant answers.</p>
-          </div>
-        </div>
-      </section>
-
-      {/* About */}
-      <section id="about" className="px-6 md:px-20 py-20 bg-white text-center">
-        <h3 className="text-3xl font-bold text-blue-900 mb-6">About LawGenie</h3>
-        <p className="max-w-3xl mx-auto text-lg text-gray-700">
-          LawGenie leverages Google Cloud's Generative AI to bridge the gap
-          between complex legal jargon and everyday understanding. Our mission
-          is to make law accessible, transparent, and empowering for everyone.
-        </p>
-      </section>
-
-      {/* Upload */}
+      {/* Upload & Actions */}
       <section id="upload" className="px-6 md:px-20 py-20 bg-gray-50 text-center">
         <h3 className="text-3xl font-bold text-blue-900 mb-6">Upload Your Document</h3>
-        <input
-          type="file"
-          accept=".pdf,.doc,.docx,.txt"
-          onChange={handleUpload}
-          className="block mx-auto mt-4"
-        />
-        <p className="mt-4 text-gray-600">
-          Upload your contract or agreement, and let AI simplify it for you.
-        </p>
+        <input type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleUpload} className="block mx-auto mt-4" />
+        {loading === "upload" && <p className="mt-4 text-blue-600">Uploading...</p>}
+        {error && <p className="mt-4 text-red-600">{error}</p>}
+
+        {fileInfo && (
+          <div className="mt-10 flex flex-wrap gap-3 justify-center">
+            <button disabled={loading} onClick={handleSummarize} className="px-4 py-2 bg-blue-600 text-white rounded-xl disabled:opacity-50">
+              {loading === "summarize" ? "Summarizing..." : "Summarize"}
+            </button>
+            <button disabled={loading} onClick={handleAsk} className="px-4 py-2 bg-blue-600 text-white rounded-xl disabled:opacity-50">
+              {loading === "ask" ? "Answering..." : "Ask Q&A"}
+            </button>
+            <button disabled={loading} onClick={handleKeyterms} className="px-4 py-2 bg-blue-600 text-white rounded-xl disabled:opacity-50">
+              {loading === "keyterms" ? "Extracting..." : "Key Terms"}
+            </button>
+            <button disabled={loading} onClick={handleIssues} className="px-4 py-2 bg-blue-600 text-white rounded-xl disabled:opacity-50">
+              {loading === "issues" ? "Analyzing..." : "Issues"}
+            </button>
+            <button disabled={loading} onClick={handleCompare} className="px-4 py-2 bg-blue-600 text-white rounded-xl disabled:opacity-50">
+              {loading === "compare" ? "Comparing..." : "Compare"}
+            </button>
+            <button disabled={loading} onClick={handleClauses} className="px-4 py-2 bg-blue-600 text-white rounded-xl disabled:opacity-50">
+              {loading === "clauses" ? "Explaining..." : "Clauses"}
+            </button>
+            <button disabled={loading} onClick={handleComprehensive} className="px-4 py-2 bg-blue-600 text-white rounded-xl disabled:opacity-50">
+              {loading === "comprehensive" ? "Analyzing..." : "Comprehensive"}
+            </button>
+            <button disabled={loading} onClick={handleTranslate} className="px-4 py-2 bg-blue-600 text-white rounded-xl disabled:opacity-50">
+              {loading === "translate" ? "Translating..." : "Translate"}
+            </button>
+          </div>
+        )}
       </section>
 
-      {/* Contact */}
-      <section id="contact" className="px-6 py-20 bg-blue-900 text-white text-center">
-        <h3 className="text-3xl font-bold mb-6">Contact Us</h3>
-        <p className="max-w-xl mx-auto mb-8 text-lg opacity-90">
-          Have questions or feedback? Reach out to the LawGenie team today.
-        </p>
-        <button className="bg-white text-blue-900 font-semibold hover:bg-gray-200 rounded-xl px-8 py-3 text-lg">
-          Email Us
-        </button>
+      {/* Results */}
+      <section className="px-6 md:px-20 py-10 space-y-6">
+        {results.summary && <div><h4 className="font-bold">Summary</h4><p>{results.summary}</p></div>}
+        {results.answer && <div><h4 className="font-bold">Answer</h4><p>{results.answer}</p></div>}
+        {results.keyterms.length > 0 && (
+          <div>
+            <h4 className="font-bold">Key Terms</h4>
+            <ul className="list-disc pl-6">{results.keyterms.map((k, i) => <li key={i}>{k}</li>)}</ul>
+          </div>
+        )}
+        {results.issues.length > 0 && (
+          <div>
+            <h4 className="font-bold">Issues</h4>
+            <ul className="list-disc pl-6">{results.issues.map((i, idx) => <li key={idx}>{i}</li>)}</ul>
+          </div>
+        )}
+        {results.compare && <div><h4 className="font-bold">Comparison</h4><p>{results.compare}</p></div>}
+        {results.clauses && <div><h4 className="font-bold">Clauses</h4><p>{results.clauses}</p></div>}
+        {results.comprehensive && <div><h4 className="font-bold">Comprehensive Analysis</h4><p>{results.comprehensive}</p></div>}
+        {results.translation && <div><h4 className="font-bold">Translation</h4><p>{results.translation.translatedText}</p></div>}
       </section>
 
       {/* Footer */}
@@ -158,5 +299,3 @@ function App() {
 }
 
 export default App;
-
-
