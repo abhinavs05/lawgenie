@@ -1,70 +1,128 @@
-# Getting Started with Create React App
+# LawGenie Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+LawGenie frontend provides a user interface to upload, analyze, and translate legal documents. It is built using **React.js**, and communicates with the backend via **Ngrok** or a deployed API.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## 🚀 Features
 
-### `npm start`
+* File upload (PDF/DOCX)
+* Document summarization
+* Key terms & issues extraction
+* Contract comparison
+* Clause identification
+* Translation of documents
+* Simple and modern UI
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+---
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## 📦 Prerequisites
 
-### `npm test`
+* [Node.js](https://nodejs.org/) v18+
+* A running LawGenie Backend (local or via Ngrok)
+* Backend API URL set in `config.js`
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+---
 
-### `npm run build`
+## 🔧 Installation
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Clone the repository:
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```bash
+git clone https://github.com/your-username/lawgenie-frontend.git
+cd lawgenie-frontend
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Install dependencies:
 
-### `npm run eject`
+```bash
+npm install
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+---
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## ▶️ Running the Frontend
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+Start the frontend development server:
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```bash
+npm start
+```
 
-## Learn More
+By default, the app runs at:
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```
+http://localhost:3000
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+---
 
-### Code Splitting
+## 🌐 Connecting Frontend to Backend via Ngrok
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+1. Start your backend:
 
-### Analyzing the Bundle Size
+   ```bash
+   npm run dev
+   ```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+2. Expose backend with Ngrok:
 
-### Making a Progressive Web App
+   ```bash
+   ngrok http 5000
+   ```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+3. Copy the ngrok HTTPS URL (e.g. `https://pollenlike-tenorless-clemmie.ngrok-free.app`).
 
-### Advanced Configuration
+4. Update **frontend/src/config.js**:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+   ```js
+   const BASE_URL = "https://pollenlike-tenorless-clemmie.ngrok-free.app/api";
 
-### Deployment
+   const ENDPOINTS = {
+     upload: `${BASE_URL}/upload`,
+     summarize: `${BASE_URL}/summarize`,
+     ask: `${BASE_URL}/ask`,
+     keyterms: `${BASE_URL}/keyterms`,
+     issues: `${BASE_URL}/issues`,
+     compare: `${BASE_URL}/compare`,
+     clauses: `${BASE_URL}/clauses`,
+     comprehensive: `${BASE_URL}/comprehensive`,
+     translate: `${BASE_URL}/translate/document`,
+   };
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+   export default ENDPOINTS;
+   ```
 
-### `npm run build` fails to minify
+5. Restart the frontend:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+   ```bash
+   npm start
+   ```
+
+---
+
+## 📁 Project Structure
+
+```
+src/
+│── components/        # UI Components
+│── pages/             # Page-level components
+│── config.js          # Backend API endpoints
+│── App.js             # Main React component
+│── index.js           # Entry point
+public/                # Static assets
+```
+
+---
+
+## ⚠️ Notes
+
+* If ngrok URL changes, update `config.js` each time (unless you use a reserved domain).
+* Ensure backend is running before frontend API calls.
+* You can deploy this frontend to **Firebase Hosting, Netlify, or Vercel**.
+
+---
+
+## 📜 License
+
+MIT License © 2025 LawGenie
